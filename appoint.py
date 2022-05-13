@@ -1,3 +1,5 @@
+from requests_futures.sessions import FuturesSession
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
 import datetime
@@ -31,6 +33,8 @@ class Appointer(object):
         self.name =''
         self.phone =''
         self.session = requests.Session()
+        # futuresSession
+        self.sf = FuturesSession()
 
     def update_info(self, name, phone):
         self.name = name
@@ -90,7 +94,9 @@ class Appointer(object):
         })
 
         self.data = resp.json()["data"]
+        # print(self.data)
         self.session.headers.update({"token": self.data["token"]})
+        self.sf = FuturesSession(session=self.session, executor=ThreadPoolExecutor(max_workers=30))
 
 
     def get_time_list(self):
@@ -122,20 +128,22 @@ class Appointer(object):
             "appointmentDay": date,
             "phone": self.phone
         }
-        print(payload)
-        resp = self.post('app/appointment/record/submit', json=payload)
-        result_code = int(resp.json()['code'])
-        result_msg = resp.json()['msg']
-        if result_code == 400:
-            pass
-        return resp.json()
+        # print(payload)
+        resp_future = self.post_async('app/appointment/record/submit', json=payload)
+        # result_code = int(resp.json()['code'])
+        # # result_msg = resp.json()['msg']
+        # if result_code == 400:
+        #     pass
+        return resp_future
         
 
     def post(self, url, *args, **kwargs):
         actual_url = "https://cgyy.ustc.edu.cn/api/" + url
         return self.session.post(actual_url, *args, **kwargs)
-        
 
+    def post_async(self, url, *args, **kwargs):
+        actual_url = "https://cgyy.ustc.edu.cn/api/" + url
+        return self.sf.post(actual_url, *args, **kwargs)
     '''
     time_id:
     3  --> 08:00-09:30
@@ -161,12 +169,34 @@ if __name__ == '__main__':
     # a.dump_session()
     # a.load_session()
     a.update_info(data.name, data.phone)
-    t = datetime.datetime.combine(datetime.datetime.today(),  datetime.time(22))
-    t = time.mktime(t.timetuple())
-    while time.time() < t:
-        time.sleep(0.001)
-    print(time.time())
+    # print(t)
+
+    def process_resp(fut):
+        resp = fut.result()
+        # result_code = int(resp.json()['code'])
+        # result_msg = resp.json()['msg']
+        # if result_code == 400:
+        #     pass
+        msg = resp.json()
+        print(msg)
+        return msg
+
+    # print(time.time() - t0)
     # print(a.get_time_list())
     # print(a.get_appointment_list(5))
-    print(a.submit(11, 10, get_date_str(1)))
-    print(a.submit(11, 8, get_date_str(1)))
+    # NOTE took 0.03s for one request in eduroam
+    tommorow = get_date_str(1)
+
+    t = datetime.datetime.combine(datetime.datetime.today(),  datetime.time(22))
+    t = time.mktime(t.timetuple())
+    time.sleep(t - 0.02)
+
+    t0 = time.time()
+    
+    rs = []
+    for j in range(2):
+        rs.extend([a.submit(11, i, tommorow) for i in range(1, 15)])
+
+    for r in rs:
+        process_resp(r)
+
