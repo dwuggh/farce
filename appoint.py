@@ -169,7 +169,6 @@ if __name__ == '__main__':
     # a.dump_session()
     # a.load_session()
     a.update_info(data.name, data.phone)
-    # print(t)
 
     def process_resp(fut):
         resp = fut.result()
@@ -181,7 +180,6 @@ if __name__ == '__main__':
         print(msg)
         return msg
 
-    # print(time.time() - t0)
     # print(a.get_time_list())
     # print(a.get_appointment_list(5))
     # NOTE took 0.03s for one request in eduroam
@@ -189,7 +187,7 @@ if __name__ == '__main__':
 
     t = datetime.datetime.combine(datetime.datetime.today(),  datetime.time(22))
     t = time.mktime(t.timetuple())
-    time.sleep(t - 0.02)
+    time.sleep(t - time.time() - 0.02)
 
     t0 = time.time()
     
