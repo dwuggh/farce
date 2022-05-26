@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 import datetime
 import pickle
 import time
-import random
 
 def get_date_str(offset=0):
     now = datetime.datetime.now()
@@ -187,13 +186,14 @@ if __name__ == '__main__':
 
     t = datetime.datetime.combine(datetime.datetime.today(),  datetime.time(22))
     t = time.mktime(t.timetuple())
-    time.sleep(t - time.time() - 0.02)
+    time.sleep(t - time.time() - data.prepone)
 
     t0 = time.time()
     
     rs = []
-    for j in range(2):
-        rs.extend([a.submit(11, i, tommorow) for i in range(1, 15)])
+    for j in range(data.reps):
+        for t in data.time_id:
+            rs.extend([a.submit(t, i, tommorow) for i in range(1, 15)])
 
     for r in rs:
         process_resp(r)
